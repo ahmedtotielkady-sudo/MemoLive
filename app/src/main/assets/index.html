@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#100719"><title>Memo Live</title>
+<style>
+:root{--bg:#100719;--panel:#1d1028;--purple:#762be0;--gold:#c99a42;--muted:#a99bb5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 5%,#39204d 0,#160b20 43%,#0d0613 100%);color:#fff;font-family:Arial,sans-serif;min-height:100dvh}button,input{font:inherit}.screen{min-height:100dvh;padding:26px 22px 90px;display:none}.screen.active{display:flex;flex-direction:column}.brand{text-align:center;margin:10vh auto 28px}.eagle{font-size:64px;color:var(--gold);filter:drop-shadow(0 0 18px #b8893c66)}h1{font-size:32px;color:#f4cc69;margin:8px 0}.sub{color:#b9aabd;font-size:13px}.field{width:100%;padding:17px;border-radius:18px;border:1px solid #493356;background:#21142b;color:white;margin:9px 0;text-align:right;outline:none}.primary,.secondary{width:100%;padding:17px;border-radius:16px;font-weight:bold;margin-top:12px}.primary{border:0;color:white;background:linear-gradient(100deg,#a56aff,#6920cf);box-shadow:0 8px 24px #762be044}.secondary{border:1px solid var(--gold);background:#1a101d;color:#e7c77e}.hint{text-align:center;color:#9e8fa7;font-size:12px;margin:14px 0}.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.chip{font-size:11px;color:#c7b7d1;background:#2a1b35;border-radius:20px;padding:9px 12px}.top{display:flex;justify-content:space-between;align-items:center;padding:8px 0 20px}.wallet{background:#281638;border:1px solid #65418a;padding:9px 13px;border-radius:20px;color:#f5d47d}.section-title{font-size:22px;color:#f3ce7b;margin:12px 0}.room{background:linear-gradient(120deg,#2c1b3a,#1b1027);border:1px solid #493356;border-radius:18px;padding:16px;margin:8px 0}.room small{color:var(--muted)}.nav{position:fixed;bottom:0;left:0;right:0;background:#160d20;border-top:1px solid #3b2947;display:flex;justify-content:space-around;padding:12px 4px calc(12px + env(safe-area-inset-bottom))}.nav button{background:none;border:0;color:#b8a9c4;font-size:12px}.nav button.sel{color:#f1cb73}.hide{display:none!important}
+</style></head>
+<body>
+<section id="login" class="screen active">
+ <div class="brand"><div class="eagle">🦅</div><h1>دردشة صوتية</h1><div class="sub">MEMO LIVE · حيث تلتقي الأصوات وتصنع الصداقات</div></div>
+ <input id="username" class="field" autocomplete="username" placeholder="اكتب اسمك في التطبيق">
+ <input id="password" class="field" type="password" autocomplete="current-password" placeholder="كلمة المرور">
+ <button class="primary" onclick="login()">تسجيل الدخول　↵</button>
+ <div class="hint">أو</div><button class="secondary" onclick="showRegister()">إنشاء حساب جديد　♙</button>
+ <div class="hint">بالدخول، أنت توافق على شروط الاستخدام وسياسة الخصوصية</div>
+ <div class="chips"><span class="chip">🎁 هدايا تفاعلية</span><span class="chip">🎙 غرف صوتية مباشرة</span><span class="chip">◉ محفظة عملات</span></div>
+</section>
+<section id="register" class="screen"><div class="top"><button onclick="show('login')">رجوع</button><b>إنشاء حساب</b></div><h2 class="section-title">انضم إلى Memo Live</h2><input id="newname" class="field" placeholder="اسم المستخدم"><input id="newpass" class="field" type="password" placeholder="كلمة المرور"><button class="primary" onclick="register()">إنشاء الحساب</button><p class="hint" id="authmsg"></p></section>
+<section id="home" class="screen"><div class="top"><b>🦅 Memo Live</b><span class="wallet">🪙 <span id="coins">0</span></span></div><h2 class="section-title">الغرف الصوتية</h2><div class="room"><b>🎙 الغرف النشطة</b><p><small>استكشف الغرف وانضم إلى أصدقائك</small></p></div><div class="room"><b>✨ اكتشف مجتمع ميمو</b><p><small>قريبًا ستظهر الغرف المتاحة من الخادم</small></p></div></section>
+<section id="games" class="screen"><h2 class="section-title">الألعاب</h2><div class="room">🎮 الألعاب التفاعلية</div></section>
+<section id="messages" class="screen"><h2 class="section-title">الرسائل</h2><div class="room">💬 محادثاتك</div></section>
+<section id="profile" class="screen"><h2 class="section-title">حسابي</h2><div class="room">👤 الملف الشخصي</div><div class="room">⭐ VIP　　🎁 الهدايا　　🪙 المحفظة</div><button class="secondary" onclick="logout()">تسجيل الخروج</button></section>
+<nav id="nav" class="nav hide"><button class="sel" onclick="tab('home',this)">⌂<br>الرئيسية</button><button onclick="tab('games',this)">♧<br>الألعاب</button><button onclick="tab('messages',this)">✉<br>الرسائل</button><button onclick="tab('profile',this)">♙<br>حسابي</button></nav>
+<script>
+const API='';function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.getElementById('nav').classList.toggle('hide',!['home','games','messages','profile'].includes(id))}
+function showRegister(){show('register')}
+async function request(path,data){if(!API)throw Error('الخادم غير مربوط بعد');const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const j=await r.json();if(!r.ok)throw Error(j.message||'تعذر تنفيذ الطلب');return j}
+async function login(){const u=username.value.trim(),p=password.value;if(!u||!p){alert('اكتب اسم المستخدم وكلمة المرور');return}try{const j=await request('/api/auth/login',{username:u,password:p});localStorage.setItem('memo_token',j.token);show('home')}catch(e){alert(e.message)}}
+async function register(){try{await request('/api/auth/register',{username:newname.value.trim(),password:newpass.value});authmsg.textContent='تم إنشاء الحساب، سجل الدخول الآن';}catch(e){authmsg.textContent=e.message}}
+function tab(id,el){show(id);document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('sel'));el.classList.add('sel')}
+function logout(){localStorage.removeItem('memo_token');show('login')}
+</script></body></html>
