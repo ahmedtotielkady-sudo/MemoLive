@@ -24,13 +24,50 @@
 <section id="profile" class="screen"><h2 class="section-title">حسابي</h2><div class="room">👤 الملف الشخصي</div><div class="room">⭐ VIP　　🎁 الهدايا　　🪙 المحفظة</div><button id="ownerAccess" class="secondary hide" onclick="openOwnerPanel()">🛡 لوحة مالك التطبيق</button><button class="secondary" onclick="logout()">تسجيل الخروج</button></section>
 <nav id="nav" class="nav hide"><button class="sel" onclick="tab('home',this)">⌂<br>الرئيسية</button><button onclick="tab('games',this)">♧<br>الألعاب</button><button onclick="tab('messages',this)">✉<br>الرسائل</button><button onclick="tab('profile',this)">♙<br>حسابي</button></nav>
 <script>
-const API='';const DEMO_MODE=true;function show(id){if(id==='owner'&&memoRole!=='owner'){alert('هذه الصفحة متاحة لمالك التطبيق فقط');return}document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.getElementById('nav').classList.toggle('hide',!['home','games','messages','profile'].includes(id))}
+const API='';
+let memoRole='user', currentUser=null;
+const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch{return d}};
+const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const users=()=>read('memo_users',[]);
+const saveUsers=v=>write('memo_users',v);
+const ledger=()=>read('memo_ledger',[]);
+const log=(type,details)=>{const a=ledger();a.unshift({type,details,by:currentUser?.username||'system',at:new Date().toLocaleString('ar-EG')});write('memo_ledger',a)};
+function show(id){if(id==='owner'&&memoRole!=='owner'){alert('هذه الصفحة متاحة لمالك التطبيق فقط');return}document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.getElementById('nav').classList.toggle('hide',!['home','games','messages','profile'].includes(id));}
 function showRegister(){show('register')}
-async function request(path,data){if(!API)throw Error('الخادم غير مربوط بعد');const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const j=await r.json();if(!r.ok)throw Error(j.message||'تعذر تنفيذ الطلب');return j}
-async function login(){const u=document.getElementById('username').value.trim(),p=document.getElementById('password').value;if(!u||!p){alert('اكتب اسم المستخدم وكلمة المرور');return}if(DEMO_MODE){localStorage.setItem('memo_demo_user',u);document.getElementById('coins').textContent='1000';show('home');return}try{const j=await request('/api/auth/login',{username:u,password:p});localStorage.setItem('memo_token',j.token);show('home')}catch(e){alert(e.message)}}
-async function register(){const u=document.getElementById('newname').value.trim(),p=document.getElementById('newpass').value;if(!u||!p){authmsg.textContent='اكتب الاسم وكلمة المرور';return}if(DEMO_MODE){localStorage.setItem('memo_demo_user',u);authmsg.textContent='تم إنشاء حساب تجريبي على هذا الجهاز. يمكنك تسجيل الدخول الآن.';return}try{await request('/api/auth/register',{username:u,password:p});authmsg.textContent='تم إنشاء الحساب، سجل الدخول الآن'}catch(e){authmsg.textContent=e.message}}
+function syncUser(){if(!currentUser)return;const u=users().find(x=>x.username===currentUser.username);if(u){currentUser=u;document.getElementById('coins').textContent=u.coins;document.getElementById('ownerAccess').classList.toggle('hide',u.role!=='owner');memoRole=u.role;}}
+function login(){const u=document.getElementById('username').value.trim(),p=document.getElementById('password').value;if(!u||!p){alert('اكتب اسم المستخدم وكلمة المرور');return}const found=users().find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);if(!found){alert('بيانات الدخول غير صحيحة. أنشئ حسابًا تجريبيًا أولاً.');return}currentUser=found;memoRole=found.role;syncUser();show('home');}
+function register(){const u=document.getElementById('newname').value.trim(),p=document.getElementById('newpass').value;if(u.length<3||p.length<4){document.getElementById('authmsg').textContent='الاسم 3 أحرف على الأقل وكلمة المرور 4 أحرف على الأقل';return}const list=users();if(list.some(x=>x.username.toLowerCase()===u.toLowerCase())){document.getElementById('authmsg').textContent='اسم المستخدم مستخدم بالفعل';return}const role=list.length===0?'owner':'user';const item={username:u,password:p,role,coins:role==='owner'?100000:1000,vip:0,banned:false,agency:null,createdAt:new Date().toISOString()};list.push(item);saveUsers(list);log('إنشاء حساب','تم إنشاء '+u+' بدور '+role);document.getElementById('authmsg').textContent=role==='owner'?'تم إنشاء أول حساب تجريبي كمالك لهذا الجهاز. سجّل الدخول.':'تم إنشاء الحساب التجريبي. سجّل الدخول الآن.';}
 function tab(id,el){show(id);document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('sel'));el.classList.add('sel')}
-function ownerAction(name){alert('قسم '+name+' موجود ضمن لوحة المالك. التنفيذ الفعلي سيتاح بعد ربط صلاحيات المالك بالخادم وقاعدة البيانات.')}\nfunction openOwnerPanel(){show('owner')}\nfunction setAuthenticatedRole(role){memoRole=role==='owner'?'owner':'user';const b=document.getElementById('ownerAccess');if(b)b.classList.toggle('hide',memoRole!=='owner')}\nfunction logout(){memoRole='user';localStorage.removeItem('memo_token');localStorage.removeItem('memo_demo_user');show('login')}
+function setUserCoins(username,delta,type){const list=users(),i=list.findIndex(x=>x.username===username);if(i<0)throw Error('المستخدم غير موجود');if(list[i].coins+delta<0)throw Error('الرصيد غير كافٍ');list[i].coins+=delta;saveUsers(list);log(type,username+' | '+(delta>=0?'+':'')+delta+' عملة');if(currentUser?.username===username)syncUser();}
+function ownerAction(action){
+ if(memoRole!=='owner'||!currentUser||currentUser.role!=='owner'){alert('غير مصرح');return}
+ const ask=(q)=>prompt(q);
+ try{
+  if(action==='إضافة رصيد'||action==='سحب عملات'||action==='إرسال عملات'||action==='شحن العملات'){
+   const name=ask('اكتب اسم المستخدم المستهدف:');if(!name)return;
+   const amount=Number(ask('اكتب عدد العملات:'));if(!Number.isSafeInteger(amount)||amount<=0){alert('أدخل عددًا صحيحًا أكبر من صفر');return}
+   if(action==='إرسال عملات'){const from=currentUser.username;setUserCoins(from,-amount,'إرسال عملات');setUserCoins(name,amount,'استلام عملات')}
+   else setUserCoins(name,action==='سحب عملات'?-amount:amount,action);
+   alert('تم تحديث الرصيد محليًا بنجاح.');
+  }else if(action==='إنشاء وكالة'){
+   const name=ask('اسم المستخدم الذي سيصبح وكيلًا:');if(!name)return;const list=users(),i=list.findIndex(x=>x.username===name);if(i<0)throw Error('المستخدم غير موجود');list[i].agency='AG-'+Date.now();saveUsers(list);log('إنشاء وكالة',name+' / '+list[i].agency);alert('تم إنشاء الوكالة محليًا: '+list[i].agency);
+  }else if(action==='إلغاء وكالة'||action==='إدارة الوكلاء'){
+   const name=ask('اسم الوكيل:');if(!name)return;const list=users(),i=list.findIndex(x=>x.username===name);if(i<0)throw Error('المستخدم غير موجود');if(action==='إلغاء وكالة'){list[i].agency=null;saveUsers(list);log('إلغاء وكالة',name);alert('تم إلغاء الوكالة محليًا')}else alert('الوكالة: '+(list[i].agency||'لا توجد وكالة'));
+  }else if(action==='إدارة المستخدمين'||action==='سجل المستخدمين'){
+   alert(users().map(x=>x.username+' — '+x.role+' — '+x.coins+' عملة'+(x.agency?' — '+x.agency:'')).join('\n')||'لا يوجد مستخدمون');
+  }else if(action==='الحظر وفك الحظر'){
+   const name=ask('اسم المستخدم:');if(!name)return;const list=users(),i=list.findIndex(x=>x.username===name);if(i<0)throw Error('المستخدم غير موجود');list[i].banned=!list[i].banned;saveUsers(list);log('تغيير الحظر',name+' / '+list[i].banned);alert(list[i].banned?'تم الحظر محليًا':'تم فك الحظر محليًا');
+  }else if(action==='تعديل بيانات المستخدم'){
+   const name=ask('اسم المستخدم:');if(!name)return;const list=users(),i=list.findIndex(x=>x.username===name);if(i<0)throw Error('المستخدم غير موجود');const vip=Number(ask('مستوى VIP الجديد (0-13):'));if(!Number.isInteger(vip)||vip<0||vip>13)throw Error('مستوى VIP غير صحيح');list[i].vip=vip;saveUsers(list);log('تعديل VIP',name+' / '+vip);alert('تم التعديل محليًا');
+  }else if(action==='ملخص السجلات'||action==='سجل العملات'||action==='سجل الوكالات'){
+   const rows=ledger().filter(x=>action==='ملخص السجلات'||(action==='سجل العملات'?/عملة|رصيد|شحن/.test(x.type):/وكالة/.test(x.type)));alert(rows.map(x=>x.at+' — '+x.type+' — '+x.details+' — بواسطة '+x.by).join('\n')||'لا توجد سجلات بعد');
+  }else if(action==='إدارة الغرف'||action==='الهدايا'||action==='VIP'||action==='إعدادات التطبيق'){
+   alert('هذا القسم ظاهر في نسخة الاختبار، وسيتم استكمال إعداداته المحلية في المرحلة التالية.');
+  }
+ }catch(e){alert(e.message)}
+}
+function openOwnerPanel(){if(memoRole==='owner')show('owner');else alert('هذه الصفحة متاحة لمالك التطبيق فقط')}
+function logout(){currentUser=null;memoRole='user';show('login')}
 </script>
 <section id="owner" class="screen">
  <div class="top"><button onclick="show('profile')">رجوع</button><b>🛡 لوحة مالك Memo Live</b></div>
