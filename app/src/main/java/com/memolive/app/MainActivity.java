@@ -12,7 +12,6 @@ import android.graphics.Color;
 
 public class MainActivity extends Activity {
     private WebView webView;
-    private static final String HOME_URL = "https://sawti-chat-hv6l.whacka.app/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,9 +35,9 @@ public class MainActivity extends Activity {
         setContentView(webView);
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
-            if (webView.getUrl() == null) webView.loadUrl(HOME_URL);
+            if (webView.getUrl() == null) webView.loadUrl("file:///android_asset/index.html");
         } else {
-            webView.loadUrl(HOME_URL);
+            webView.loadUrl("file:///android_asset/index.html");
         }
     }
 
@@ -46,10 +45,12 @@ public class MainActivity extends Activity {
         super.onSaveInstanceState(outState);
         if (webView != null) webView.saveState(outState);
     }
+
     @Override public void onBackPressed() {
         if (webView != null && webView.canGoBack()) webView.goBack();
         else super.onBackPressed();
     }
+
     @Override protected void onDestroy() {
         if (webView != null) { webView.destroy(); webView = null; }
         super.onDestroy();
