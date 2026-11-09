@@ -30,6 +30,7 @@ const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify
 const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 const users=()=>read('memo_users',[]);
 const saveUsers=v=>write('memo_users',v);
+if(localStorage.getItem('memo_owner_claimed')!=='1'){const legacy=users();let changed=false;legacy.forEach(x=>{if(x.role==='owner'){x.role='user';changed=true}});if(changed)saveUsers(legacy)}
 const ledger=()=>read('memo_ledger',[]);
 const log=(type,details)=>{const a=ledger();a.unshift({type,details,by:currentUser?.username||'system',at:new Date().toLocaleString('ar-EG')});write('memo_ledger',a)};
 function show(id){if(id==='owner'&&memoRole!=='owner'){alert('هذه الصفحة متاحة لمالك التطبيق فقط');return}document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.getElementById('nav').classList.toggle('hide',!['home','games','messages','profile'].includes(id));}
