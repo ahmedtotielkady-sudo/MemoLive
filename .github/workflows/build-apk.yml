@@ -1,13 +1,31 @@
-name: Build Memo Live APK
+name: Build Memo Live Local Test APK
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
+    paths:
+      - 'MemoLive-Local-Test.zip'
+      - '.github/workflows/build-apk.yml'
+      - 'app/**'
+      - 'build.gradle'
+      - 'settings.gradle'
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare local HTML app and games
+        run: |
+          test -f MemoLive-Local-Test.zip
+          mkdir -p /tmp/memolive-source app/src/main/assets
+          unzip -q MemoLive-Local-Test.zip -d /tmp/memolive-source
+          cp /tmp/memolive-source/MemoLive-Local-Test/index.html app/src/main/assets/index.html
+          rm -rf app/src/main/assets/games
+          cp -R /tmp/memolive-source/MemoLive-Local-Test/games app/src/main/assets/games
+          test -s app/src/main/assets/index.html
+          test -s app/src/main/assets/games/ocean-storm/index.html
+          test -s app/src/main/assets/games/animal-wheel/index.html
+          test -s app/src/main/assets/games/slot-777/index.html
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -15,9 +33,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - run: gradle assembleDebug
+      - name: Build debug APK
+        run: gradle assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: MemoLive-debug-apk
+          name: MemoLive-local-test-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
